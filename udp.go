@@ -5,37 +5,56 @@ import (
 	"net"
 )
 
-type UDPServer struct {
-	playerIds         map[net.Addr]PlayerId
-	playerConnections map[PlayerId]PlayerConnection
-	sessions          map[PlayerConnection]UDPSession
+type Server struct {
+	conn           net.PacketConn
+	clients        map[net.Addr]Client
+	clientSessions map[Client]ClientSession
 }
 
-type PlayerId struct {
+type Client struct {
 	addr net.Addr
 }
 
-type PlayerConnection struct {
+type ClientSession struct {
+	clientConnection ClientConnection
+	// session          func()
 }
 
-type UDPSession struct {
+type ClientConnection struct {
+	addr net.Addr
 }
 
-func (udpServer *UDPServer) Send(b []byte, addr net.Addr) {
-	session := udpServer.getOrMakeSession(addr)
-	fmt.Println(addr.String)
-}
-
-func (udpServer UDPServer) getOrMakeSession(addr net.Addr) UDPSession {
-	playerId, ok := udpServer.playerIds[addr]
-	if !ok {
-		playerId := PlayerId{addr}
-		playerConnection := PlayerConnection{}
-		udpSession := UDPSession{}
-		udpServer.playerIds[addr] = playerId
-		udpServer.playerConnections[playerId] = playerConnection
-		udpServer.sessions[playerConnection] = udpSession
-		return udpSession
+func NewServer(conn *net.UDPConn) Server {
+	return Server{
+		conn,
+		make(map[net.Addr]Client),
+		make(map[Client]ClientSession),
 	}
-	return udpServer.sessions[udpServer.playerConnections[udpServer.playerIds[playerId.addr]]]
+}
+
+func (server *Server) GetOrMakeClient(addr net.Addr) Client {
+	// todo: authentication, then;
+	client, ok := server.clients[addr]
+	if !ok {
+		client := Client{addr}
+		server.clients[addr] = client
+	}
+	_, ok = server.clientSessions[client]
+	if !ok {
+		clientConnection := ClientConnection{addr}
+		// todo: client-based sessions; not net.Addr-based
+		udpSession := ClientSession{
+			clientConnection: clientConnection,
+			// session:          go func (),
+		}
+		server.clientSessions[client] = udpSession
+		return client
+	}
+	return client
+}
+
+func (server *Server) Send(s string, client Client) {
+	session := server.clientSessions[client]
+	server.conn.WriteTo([]byte(s), session.clientConnection.addr)
+	fmt.Println(s)
 }

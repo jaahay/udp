@@ -13,13 +13,15 @@ func main() {
 	}
 	defer conn.Close()
 
+	server := NewServer(conn)
 	for {
 		buffer := make([]byte, 1028)
-		bytes, addr, err := conn.ReadFromUDP(buffer)
+		// number_of_bytes_read...
+		_, addr, err := conn.ReadFromUDP(buffer)
 		if err != nil {
 			continue
 		}
-		udpServer := UDPServer{}
-		udpServer.Send(buffer[:bytes], addr)
+		client := server.GetOrMakeClient(addr)
+		server.Send(string(buffer), client)
 	}
 }
