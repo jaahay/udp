@@ -5,7 +5,9 @@ import (
 	"net"
 )
 
-type Server struct {
+type Server interface {
+}
+type server struct {
 	conn           net.PacketConn
 	clients        map[net.Addr]Client
 	clientSessions map[Client]ClientSession
@@ -25,14 +27,14 @@ type ClientConnection struct {
 }
 
 func NewServer(conn *net.UDPConn) Server {
-	return Server{
+	return server{
 		conn,
 		make(map[net.Addr]Client),
 		make(map[Client]ClientSession),
 	}
 }
 
-func (server *Server) GetOrMakeClient(addr net.Addr) Client {
+func (server *server) GetOrMakeClient(addr net.Addr) Client {
 	// todo: authentication, then;
 	client, ok := server.clients[addr]
 	if !ok {
@@ -53,7 +55,7 @@ func (server *Server) GetOrMakeClient(addr net.Addr) Client {
 	return client
 }
 
-func (server *Server) Send(s string, client Client) {
+func (server *server) Send(s string, client Client) {
 	session := server.clientSessions[client]
 	server.conn.WriteTo([]byte(s), session.clientConnection.addr)
 	fmt.Println(s)
