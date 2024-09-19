@@ -2,6 +2,7 @@ package udp
 
 import (
 	"fmt"
+	"net"
 )
 
 type Config struct {
@@ -9,8 +10,8 @@ type Config struct {
 
 // net.PacketConn
 type Conn interface {
-	ReadFrom(p []byte) (n int, addr Addr, err error)
-	WriteTo(p []byte, addr Addr) (n int, err error)
+	ReadFrom(p []byte) (n int, addr net.Addr, err error)
+	WriteTo(p []byte, addr net.Addr) (n int, err error)
 
 	// Close() error
 	// LocalAddr() Addr
@@ -19,20 +20,20 @@ type Conn interface {
 	// SetWriteDeadline(t time.Time) error
 }
 
-// net.Addr
-type Addr interface {
-	Network() string
-	String() string
-}
+// // net.Addr
+// type Addr interface {
+// 	Network() string
+// 	String() string
+// }
 
 type Server struct {
 	conn           Conn
-	clients        map[Addr]Client
+	clients        map[net.Addr]Client
 	clientSessions map[Client]ClientSession
 }
 
 type Client struct {
-	addr Addr
+	addr net.Addr
 }
 
 type ClientSession struct {
@@ -41,18 +42,18 @@ type ClientSession struct {
 }
 
 type ClientConnection struct {
-	addr Addr
+	addr net.Addr
 }
 
 func NewServer(conn Conn) Server {
 	return Server{
 		conn,
-		make(map[Addr]Client),
+		make(map[net.Addr]Client),
 		make(map[Client]ClientSession),
 	}
 }
 
-func (server *Server) GetOrMakeClient(addr Addr) Client {
+func (server *Server) GetOrMakeClient(addr net.Addr) Client {
 	// todo: authentication, then;
 	client, ok := server.clients[addr]
 	if !ok {

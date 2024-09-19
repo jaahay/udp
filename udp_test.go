@@ -1,6 +1,7 @@
 package udp
 
 import (
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,11 +12,11 @@ type MyMockedUDPConn struct {
 	mock.Mock
 }
 
-func (o *MyMockedUDPConn) ReadFrom(p []byte) (n int, addr Addr, err error) {
+func (o *MyMockedUDPConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
 	return
 }
 
-func (o *MyMockedUDPConn) WriteTo(p []byte, addr Addr) (n int, err error) {
+func (o *MyMockedUDPConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 	return
 }
 
