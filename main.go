@@ -1,6 +1,9 @@
-package main
+package udp
 
-import "net"
+import (
+	"fmt"
+	"net"
+)
 
 func main() {
 	addr, err := net.ResolveUDPAddr("udp", "10.0.0.1:2000")
@@ -14,6 +17,8 @@ func main() {
 	defer conn.Close()
 
 	server := NewServer(conn)
+	fmt.Print(server.clientSessions)
+
 	for {
 		buffer := make([]byte, 1028)
 		// number_of_bytes_read...
