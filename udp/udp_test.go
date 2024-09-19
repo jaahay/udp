@@ -4,7 +4,6 @@ import (
 	"net"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -35,7 +34,6 @@ func (o *MyMockedAddr) String() string {
 func TestNewServer(t *testing.T) {
 	mockUDPConn := new(MyMockedUDPConn)
 	server := NewServer(mockUDPConn)
-	assert.Equal(t, 1, 1)
 	mockAddr := new(MyMockedAddr)
 	server.GetOrMakeClient(mockAddr)
 }

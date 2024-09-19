@@ -1,8 +1,9 @@
-package udp
+package main
 
 import (
-	"fmt"
 	"net"
+
+	"github.com/jaahay/udp/udp"
 )
 
 func main() {
@@ -16,8 +17,8 @@ func main() {
 	}
 	defer conn.Close()
 
-	server := NewServer(conn)
-	fmt.Print(server.clientSessions)
+	server := udp.NewServer(conn)
+	// fmt.Print(server.clientSessions)
 
 	for {
 		buffer := make([]byte, 1028)
