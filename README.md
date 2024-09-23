@@ -11,6 +11,7 @@ state
 ## Using it
 
 ## How to configure
+tags
 handshaking
 sequencing
 needing
