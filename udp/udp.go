@@ -6,12 +6,15 @@ import (
 )
 
 type Server interface {
-	GetOrMakeClient(addr net.Addr) client
-	Send(s string, client client)
+	GetOrMakeClient(addr net.Addr) Client
+	Send(s string, client Client)
+}
+
+type Client interface {
 }
 
 // net.PacketConn
-type Conn interface {
+type conn interface {
 	ReadFrom(p []byte) (n int, addr net.Addr, err error)
 	WriteTo(p []byte, addr net.Addr) (n int, err error)
 
@@ -29,9 +32,9 @@ type Conn interface {
 // }
 
 type server struct {
-	conn           Conn
-	clients        map[net.Addr]client
-	clientSessions map[client]clientSession
+	conn           conn
+	clients        map[net.Addr]Client
+	clientSessions map[Client]clientSession
 }
 
 type client struct {
@@ -46,15 +49,15 @@ type clientConnection struct {
 	addr net.Addr
 }
 
-func NewServer(conn Conn) Server {
+func NewServer(conn conn) Server {
 	return server{
 		conn,
-		make(map[net.Addr]client),
-		make(map[client]clientSession),
+		make(map[net.Addr]Client),
+		make(map[Client]clientSession),
 	}
 }
 
-func (server server) GetOrMakeClient(addr net.Addr) client {
+func (server server) GetOrMakeClient(addr net.Addr) Client {
 	c, ok := server.clients[addr]
 	if !ok {
 		c := client{addr}
@@ -70,7 +73,7 @@ func (server server) GetOrMakeClient(addr net.Addr) client {
 	return c
 }
 
-func (server server) Send(s string, client client) {
+func (server server) Send(s string, client Client) {
 	session := server.clientSessions[client]
 	server.conn.WriteTo([]byte(s), session.clientConnection.addr)
 	fmt.Println(s)

@@ -12,7 +12,7 @@ type MyMockedUDPConn struct {
 }
 
 func (o *MyMockedUDPConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
-	return
+	return 1, &MyMockedAddr{}, nil
 }
 
 func (o *MyMockedUDPConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
@@ -31,9 +31,11 @@ func (o *MyMockedAddr) String() string {
 	return ""
 }
 
-func TestNewServer(t *testing.T) {
+func TestSmoke(t *testing.T) {
 	mockUDPConn := new(MyMockedUDPConn)
 	server := NewServer(mockUDPConn)
 	mockAddr := new(MyMockedAddr)
-	server.GetOrMakeClient(mockAddr)
+
+	client := server.GetOrMakeClient(mockAddr)
+	server.Send("", client)
 }
