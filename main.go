@@ -28,6 +28,6 @@ func main() {
 			continue
 		}
 		client := server.GetOrMakeClient(addr)
-		server.Send(string(buffer), client)
+		server.Send(string(buffer), client.Id())
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -37,5 +38,6 @@ func TestSmoke(t *testing.T) {
 	mockAddr := new(MyMockedAddr)
 
 	client := server.GetOrMakeClient(mockAddr)
-	server.Send("", client)
+	assert.Equal(t, 0, client.Id())
+	server.Send("", client.Id())
 }
