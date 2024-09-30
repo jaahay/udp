@@ -43,7 +43,11 @@ func (m *MockedAddr) String() string {
 
 func TestSmoke(t *testing.T) {
 	mockUDPConn := new(MockedUDPConn)
-	server := NewServer(mockUDPConn)
+	server := NewServer(0,
+		mockUDPConn,
+		make(map[net.Addr]client),
+		make(map[int]clientSession),
+		0)
 	mockAddr := new(MockedAddr)
 
 	client := server.GetOrMakeClient(mockAddr)

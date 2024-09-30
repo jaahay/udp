@@ -35,6 +35,7 @@ type clientConnection struct {
 	id        int
 	sessionId int
 	addr      net.Addr
+	conn      net.Conn
 }
 
 func (client client) Id() int {
@@ -55,7 +56,16 @@ type server struct {
 	nextId         int
 }
 
-func NewServer(conn conn) Server {
+func EmptyServer() Server {
+	addr, err := net.ResolveUDPAddr("udp", "10.0.0.1:2000")
+	if err != nil {
+		panic("could not resolve udp addr")
+	}
+	conn, err := net.DialUDP("udp", nil, addr)
+	if err != nil {
+		panic("could not dial udp")
+	}
+	defer conn.Close()
 	return server{
 		0,
 		conn,
@@ -65,11 +75,11 @@ func NewServer(conn conn) Server {
 	}
 }
 
-// func NewServer(id int, conn conn, clients map[net.Addr]client, clientSessions map[int]clientSession, nextId int) Server {
-// 	return server{
-// 		id, conn, clients, clientSessions, nextId,
-// 	}
-// }
+func NewServer(id int, conn conn, clients map[net.Addr]client, clientSessions map[int]clientSession, nextId int) Server {
+	return server{
+		id, conn, clients, clientSessions, nextId,
+	}
+}
 
 func (server server) newClientId() int {
 	server.nextId = server.nextId + 1
@@ -83,7 +93,12 @@ func (server server) GetOrMakeClient(addr net.Addr) Client {
 	}
 	_, ok = server.clientSessions[c.id]
 	if !ok {
-		clientConnection := clientConnection{c.id, 0, addr}
+		conn, err := net.DialUDP("udp", nil, addr.(*net.UDPAddr))
+		if err != nil {
+			panic("could not dial udp")
+		}
+		defer conn.Close()
+		clientConnection := clientConnection{c.id, 0, addr, conn}
 		udpSession := clientSession{clientConnection.id, 0, clientConnection}
 		server.clientSessions[c.id] = udpSession
 		return c
