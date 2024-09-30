@@ -1,25 +1,13 @@
 package udp
 
 import (
-	"fmt"
 	"net"
 )
 
-type Server interface {
-	GetOrMakeClient(addr net.Addr) client
-	Send(s string, client client)
-}
-
 // net.PacketConn
-type Conn interface {
+type conn interface {
 	ReadFrom(p []byte) (n int, addr net.Addr, err error)
 	WriteTo(p []byte, addr net.Addr) (n int, err error)
-
-	// Close() error
-	// LocalAddr() Addr
-	// SetDeadline(t time.Time) error
-	// SetReadDeadline(t time.Time) error
-	// SetWriteDeadline(t time.Time) error
 }
 
 // // net.Addr
@@ -28,50 +16,97 @@ type Conn interface {
 // 	String() string
 // }
 
-type server struct {
-	conn           Conn
-	clients        map[net.Addr]client
-	clientSessions map[client]clientSession
+type Client interface {
+	Id() int
 }
 
 type client struct {
+	id   int
 	addr net.Addr
 }
 
 type clientSession struct {
+	id               int
+	clientId         int
 	clientConnection clientConnection
 }
 
 type clientConnection struct {
-	addr net.Addr
+	id        int
+	sessionId int
+	addr      net.Addr
+	conn      net.Conn
 }
 
-func NewServer(conn Conn) Server {
+func (client client) Id() int {
+	return client.id
+}
+
+type Server interface {
+	GetOrMakeClient(addr net.Addr) Client
+	Send(s string, clientId int)
+	newClientId() int
+}
+
+type server struct {
+	id             int
+	conn           conn
+	clients        map[net.Addr]client
+	clientSessions map[int]clientSession
+	nextId         int
+}
+
+func EmptyServer() Server {
+	addr, err := net.ResolveUDPAddr("udp", "10.0.0.1:2000")
+	if err != nil {
+		panic("could not resolve udp addr")
+	}
+	conn, err := net.DialUDP("udp", nil, addr)
+	if err != nil {
+		panic("could not dial udp")
+	}
+	defer conn.Close()
 	return server{
+		0,
 		conn,
 		make(map[net.Addr]client),
-		make(map[client]clientSession),
+		make(map[int]clientSession),
+		0,
 	}
 }
 
-func (server server) GetOrMakeClient(addr net.Addr) client {
+func NewServer(id int, conn conn, clients map[net.Addr]client, clientSessions map[int]clientSession, nextId int) Server {
+	return server{
+		id, conn, clients, clientSessions, nextId,
+	}
+}
+
+func (server server) newClientId() int {
+	server.nextId = server.nextId + 1
+	return server.nextId
+}
+func (server server) GetOrMakeClient(addr net.Addr) Client {
 	c, ok := server.clients[addr]
 	if !ok {
-		c := client{addr}
+		c := client{server.nextId, addr}
 		server.clients[addr] = c
 	}
-	_, ok = server.clientSessions[c]
+	_, ok = server.clientSessions[c.id]
 	if !ok {
-		clientConnection := clientConnection{addr}
-		udpSession := clientSession{clientConnection}
-		server.clientSessions[c] = udpSession
+		conn, err := net.DialUDP("udp", nil, addr.(*net.UDPAddr))
+		if err != nil {
+			panic("could not dial udp")
+		}
+		defer conn.Close()
+		clientConnection := clientConnection{c.id, 0, addr, conn}
+		udpSession := clientSession{clientConnection.id, 0, clientConnection}
+		server.clientSessions[c.id] = udpSession
 		return c
 	}
 	return c
 }
 
-func (server server) Send(s string, client client) {
-	session := server.clientSessions[client]
+func (server server) Send(s string, clientId int) {
+	session := server.clientSessions[clientId]
 	server.conn.WriteTo([]byte(s), session.clientConnection.addr)
-	fmt.Println(s)
 }
