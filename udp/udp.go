@@ -1,30 +1,13 @@
 package udp
 
 import (
-	"fmt"
 	"net"
 )
-
-type Server interface {
-	GetOrMakeClient(addr net.Addr) Client
-	Send(s string, clientId int)
-	NewClientId() int
-}
-
-type Client interface {
-	Id() int
-}
 
 // net.PacketConn
 type conn interface {
 	ReadFrom(p []byte) (n int, addr net.Addr, err error)
 	WriteTo(p []byte, addr net.Addr) (n int, err error)
-
-	// Close() error
-	// LocalAddr() Addr
-	// SetDeadline(t time.Time) error
-	// SetReadDeadline(t time.Time) error
-	// SetWriteDeadline(t time.Time) error
 }
 
 // // net.Addr
@@ -33,12 +16,8 @@ type conn interface {
 // 	String() string
 // }
 
-type server struct {
-	id             int
-	conn           conn
-	clients        map[net.Addr]client
-	clientSessions map[int]clientSession
-	nextId         int
+type Client interface {
+	Id() int
 }
 
 type client struct {
@@ -58,6 +37,24 @@ type clientConnection struct {
 	addr      net.Addr
 }
 
+func (client client) Id() int {
+	return client.id
+}
+
+type Server interface {
+	GetOrMakeClient(addr net.Addr) Client
+	Send(s string, clientId int)
+	newClientId() int
+}
+
+type server struct {
+	id             int
+	conn           conn
+	clients        map[net.Addr]client
+	clientSessions map[int]clientSession
+	nextId         int
+}
+
 func NewServer(conn conn) Server {
 	return server{
 		0,
@@ -68,7 +65,13 @@ func NewServer(conn conn) Server {
 	}
 }
 
-func (server server) NewClientId() int {
+// func NewServer(id int, conn conn, clients map[net.Addr]client, clientSessions map[int]clientSession, nextId int) Server {
+// 	return server{
+// 		id, conn, clients, clientSessions, nextId,
+// 	}
+// }
+
+func (server server) newClientId() int {
 	server.nextId = server.nextId + 1
 	return server.nextId
 }
@@ -88,12 +91,7 @@ func (server server) GetOrMakeClient(addr net.Addr) Client {
 	return c
 }
 
-func (client client) Id() int {
-	return client.id
-}
-
 func (server server) Send(s string, clientId int) {
 	session := server.clientSessions[clientId]
 	server.conn.WriteTo([]byte(s), session.clientConnection.addr)
-	fmt.Println(s)
 }

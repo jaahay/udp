@@ -8,36 +8,48 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MyMockedUDPConn struct {
+type MockedUDPConn struct {
 	mock.Mock
 }
 
-func (o *MyMockedUDPConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
-	return 1, &MyMockedAddr{}, nil
+// ReadFrom implements conn.
+func (m *MockedUDPConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
+	args := m.Called(p)
+	return args.Int(0), nil, args.Error(2)
 }
 
-func (o *MyMockedUDPConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
-	return
+// WriteTo implements conn.
+func (m *MockedUDPConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
+	args := m.Called(p, addr)
+	return args.Int(0), args.Error(1)
 }
 
-type MyMockedAddr struct {
+type MockedAddr struct {
 	mock.Mock
+	network string
+	string  string
 }
 
-func (o *MyMockedAddr) Network() string {
-	return ""
+// Network implements net.Addr.
+func (m *MockedAddr) Network() string {
+	return m.network
 }
 
-func (o *MyMockedAddr) String() string {
-	return ""
+// String implements net.Addr.
+// Subtle: this method shadows the method (Mock).String of MockedAddr.Mock.
+func (m *MockedAddr) String() string {
+	return m.string
 }
 
 func TestSmoke(t *testing.T) {
-	mockUDPConn := new(MyMockedUDPConn)
+	mockUDPConn := new(MockedUDPConn)
 	server := NewServer(mockUDPConn)
-	mockAddr := new(MyMockedAddr)
+	mockAddr := new(MockedAddr)
 
 	client := server.GetOrMakeClient(mockAddr)
 	assert.Equal(t, 0, client.Id())
-	server.Send("", client.Id())
+
+	mockUDPConn.Mock.On("WriteTo", []byte("hello world"), mockAddr).Return(len([]byte("hello world")), nil)
+	server.Send("hello world", client.Id())
+	mockUDPConn.AssertCalled(t, "WriteTo", []byte("hello world"), mockAddr)
 }
