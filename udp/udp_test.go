@@ -1,6 +1,7 @@
 package udp
 
 import (
+	"fmt"
 	"net"
 	"testing"
 
@@ -30,18 +31,43 @@ type MockedAddr struct {
 	net.UDPAddr
 }
 
-// // Network implements net.Addr.
-// func (m *MockedAddr) Network() string {
-// 	return m.Network()
-// }
-
-// // String implements net.Addr.
-// // Subtle: this method shadows the method (Mock).String of MockedAddr.Mock.
-// func (m *MockedAddr) String() string {
-// 	return m.String()
-// }
-
 func TestSmoke(t *testing.T) {
-	_, err := EmptyServer()
+	fmt.Println("fmt Begin")
+	server, err := EmptyServer()
 	assert.NoError(t, err)
+	fmt.Println("fmt Begun")
+	serverAddr, err := net.ResolveUDPAddr("udp", ":1053")
+	if err != nil {
+		panic("could not resolve server udp addr")
+	}
+
+	conn, err := net.DialUDP("udp", nil, serverAddr)
+	if err != nil {
+		panic("could not dial server")
+	}
+
+	// clientAddr, err := net.ResolveUDPAddr("udp", ":1054")
+	// if err != nil {
+	// 	panic("could not resolve client udp addr")
+	// }
+	// conn, err := net.DialUDP("udp", nil, clientAddr)
+	// if err != nil {
+	// 	panic("could not dial udp")
+	// }
+
+	defer conn.Close()
+
+	fmt.Println("fmt writing \"exit\"")
+	conn.Write([]byte("exit"))
+
+	received := make([]byte, 1024)
+	_, err = conn.Read(received)
+	if err != nil {
+		panic("Read data failed:")
+	}
+	fmt.Println("client received: \"" + string(received) + "\"")
+
+	fmt.Println("awaiting...")
+
+	server.Wait()
 }
