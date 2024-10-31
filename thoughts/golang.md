@@ -1,4 +1,4 @@
-# Opinion piece - 
+# Opinion piece
 
 ## Makes sense
 
@@ -8,8 +8,12 @@
 
 ## Kind-of makes sense
 
+- Pointers
+- Package and directory system
+
 ## Makes no sense
 
 - Case-sensitivity
 - Using `&Class{args}` to initialize a new instance of `Class`
 - Method overloading not supported
+- Declare dependent packages directly by repository location
