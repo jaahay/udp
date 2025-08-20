@@ -11,6 +11,8 @@ state
 ## Using it
 
 ## How to configure
+tagging
+publishing
 handshaking
 sequencing
 needing
